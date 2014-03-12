@@ -3,6 +3,7 @@ using Jacobi.Vst.Framework;
 using Jacobi.Vst.Framework.Common;
 using Jacobi.Vst.Framework.Plugin;
 using System;
+using System.Collections.Concurrent;
 
 #pragma warning disable 1591
 
@@ -14,8 +15,9 @@ namespace SchemaFactor.Vst.MidiWifi
     public class Plugin : VstPluginWithInterfaceManagerBase, IVstPluginMidiSource
     {
         /// <summary>
-        /// Gets the map where all the note map items are stored.
+        /// Threadsafe Queue that holds the incoming MIDI messages.
         /// </summary>
+        public ConcurrentQueue<byte[]> messageQueue = new ConcurrentQueue<byte[]>();
 
         public ulong idleCount { get; set; }
         public ulong packetCount { get; set; }

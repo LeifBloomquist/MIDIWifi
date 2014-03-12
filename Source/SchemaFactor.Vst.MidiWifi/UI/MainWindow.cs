@@ -69,24 +69,15 @@ namespace SchemaFactor.Vst.MidiWifi
             while (true)
             {
                 data = newsock.Receive(ref sender);
-
-                try
-                {
-                    this.Invoke(new Action(() => { Parse(sender, data); }));
-                }
-                catch (Exception)
-                {
-                    Application.Exit();
-                }
+                Parse(data);
+                this.Invoke(new Action(() => { DebugLabel.Text = Utilities.ByteArrayToString(data); }));
             }
         }
 
-        public void Parse(IPEndPoint sender, byte[] data)
+        public void Parse(byte[] data)
         {
             ReceivePulse = 1.0f;
-
-            DebugLabel.Text = Utilities.ByteArrayToString(data);
-
+        
             if (data.Length != 30)
             {
                 return;
@@ -95,6 +86,15 @@ namespace SchemaFactor.Vst.MidiWifi
             if (data[0] != 0xB0)
             {
                 return;
+            }
+
+            byte[] buffer;
+
+            for(int i = 0; i < data.Length; i+=3)
+            {
+                buffer = new byte[3];
+                Array.Copy(data, i, buffer, 0, 3);
+                _plugin.messageQueue.Enqueue(buffer);
             }
 
             double AccelX = data[2] / 127d;
@@ -107,9 +107,6 @@ namespace SchemaFactor.Vst.MidiWifi
             double MagX = data[23] / 127d;
             double MagY = data[26] / 127d;
             double MagZ = data[29] / 127d;
-
-
-
         }
 
         /// <summary>

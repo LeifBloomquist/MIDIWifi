@@ -36,130 +36,22 @@
             get { return _plugin.ChannelCount; }
         }
 
-        // Process the incoming VST events.  *** This is the core of the VST right here. ***
+        // Process the incoming MIDI events.  *** This is the core of the VST right here. ***
         public void Process(VstEventCollection inputEvents)
         {
- /*
-  * if (_plugin == null) return;
+            if (_plugin == null) return;
+            // ignore inputEvents - we should never receive any MIDI events anyway.
 
-            _plugin.callCount++;
+            byte[] buffer = new byte[4];
 
-            bool thrudone = false;
-
-            foreach (VstEvent evnt in inputEvents)
+            while (_plugin.messageQueue.TryDequeue(out buffer))
             {
-                _plugin.eventCount++;
-
-                // Skip non-MIDI Events
-                if (evnt.EventType != VstEventTypes.MidiEvent)
-                {
-                    continue;
-                }
-
-                _plugin.midiCount++;
-
-                // If set in options, keep the original event as well
-                if (_plugin.Options.MidiThruAll)
-                {
-                    Events.Add(evnt);
-                    thrudone = true;
-                }
-
-                // Don't do any more if we aren't running.
-                if (_plugin.CurrentMode != Constants.Modes.RUN) continue;
-
-                // Construct a MIDI event and act on it
-                VstMidiEvent midiInputEvent = (VstMidiEvent)evnt;
-                byte command = (byte)(midiInputEvent.Data[0] & 0xF0);
-                byte channel = (byte)(midiInputEvent.Data[0] & 0x0F);
-                byte note = midiInputEvent.Data[1];
-                byte velocity = midiInputEvent.Data[2];
-
-                MapNoteItem map = _plugin.NoteMaps[note];
-                byte[] midiData = null;
-
-                // Filter out everything except Note On/Note Off and CC events
-                switch (command)
-                {
-                    case 0x90: // Note On
-                        map.Triggered(Constants.MapTypes.ON);
-
-                        if (map.isDefined(Constants.MapTypes.ON))
-                        {
-                            _plugin.hitCount++;
-                            midiData = MapNoteItem.StringToBytes(map.OutputBytesStringOn, channel, velocity);                           
-                        }
-                        break;
-
-                    case 0x80: // Note Off
-                        map.Triggered(Constants.MapTypes.OFF);
-
-                        if (map.isDefined(Constants.MapTypes.OFF))
-                        {
-                            _plugin.hitCount++;
-                            midiData = MapNoteItem.StringToBytes(map.OutputBytesStringOff, channel, velocity);                           
-                        }
-                        break;
-
-                    case 0xB0: // Continuous Controller
-                        map.Triggered(Constants.MapTypes.CC);
-
-                        if (map.isDefined(Constants.MapTypes.CC))
-                        {
-                            _plugin.hitCount++;
-                            midiData = MapNoteItem.StringToBytes(map.OutputBytesStringCC, channel, velocity);                           
-                        }
-                        break;
-
-                    default:
-                        // Ignore everything else, but keep going below
-                        break;
-                }
-
-                // Check that we got a result.  If not - no match.
-                if (midiData == null)
-                {
-                    if (_plugin.Options.MidiThru)
-                    {
-                        // add original event, if not added already.
-                        if (!thrudone)
-                        {
-                            Events.Add(evnt);
-                        }
-                    }
-                    continue;
-                }
-
-                // In most cases, use VstMidiSysExEvent in place of VstMidiEvent, since this seems to allow arbitary bytes.      
-                if (_plugin.Options.AlwaysSysEx)
-                {
-                    VstMidiSysExEvent mappedEvent = new VstMidiSysExEvent(midiInputEvent.DeltaFrames, midiData);
-                    Events.Add(mappedEvent);
-                }
-                else  // Ugly!  Split message into three-byte chunks and send them all.
-                {
-                    List<byte[]> midichunks = new List<byte[]>();
-
-                    for (int i = 0; i < midiData.Length; i += 3)
-                    {
-                        midichunks.Add(midiData.Skip(i).Take(3).ToArray());
-                    }
-
-                    foreach (byte[] midi in midichunks)
-                    {
-                        VstMidiEvent mappedEvent = new VstMidiEvent(midiInputEvent.DeltaFrames, midiInputEvent.NoteLength, midiInputEvent.NoteOffset, midi, midiInputEvent.Detune, midiInputEvent.NoteOffVelocity);
-                        Events.Add(mappedEvent);
-                    }
-                }
-  * 
-  * 
-
-            } // foreach
-  * 
-  * */
+                //VstMidiEvent mappedEvent = new VstMidiEvent(midiInputEvent.DeltaFrames, midiInputEvent.NoteLength, midiInputEvent.NoteOffset, midi, midiInputEvent.Detune, midiInputEvent.NoteOffVelocity);
+                VstMidiEvent newEvent = new VstMidiEvent(0,0, 0, buffer, 0, 0);
+                Events.Add(newEvent);
+            }
         } // Process
 
    #endregion 
-     
     }
 }
